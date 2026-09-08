@@ -29,7 +29,7 @@
 
 GitHub를 그대로 백엔드로 사용한다(Issue = 과제, Pull Request = 제출, GitHub Actions = 자동 검증, `git blame` = 기여 귀속). 새로 만드는 것은 초대와 일감 배분을 자동화하는 프론트엔드와 AI 봇뿐이다.
 
-자세한 설계 결정과 근거는 [DESIGN.md](DESIGN.md)를 참고하세요. 구현 담당(Antigravity)에게 전달하는 작업 지시서는 [`specs/`](specs/) 디렉토리에 버전별로 쌓입니다. 버전 이력은 [CHANGELOG.md](CHANGELOG.md) 참고.
+자세한 설계 결정과 근거는 [DESIGN.md](DESIGN.md)를 참고하세요. 참여 방법과 협업 절차는 [CONTRIBUTING.md](CONTRIBUTING.md)를 참고하세요. 구현 담당(Antigravity)에게 전달하는 작업 지시서는 [`specs/`](specs/) 디렉토리에 버전별로 쌓입니다. 버전 이력은 [CHANGELOG.md](CHANGELOG.md) 참고.
 
 ## 라이선스
 
