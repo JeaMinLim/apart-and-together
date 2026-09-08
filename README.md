@@ -28,6 +28,8 @@
 
 GitHub를 그대로 백엔드로 사용한다(Issue = 과제, Pull Request = 제출, GitHub Actions = 자동 검증, `git blame` = 기여 귀속). 새로 만드는 것은 초대와 일감 배분을 자동화하는 프론트엔드와 AI 봇뿐이다.
 
+자세한 설계 결정과 근거는 [DESIGN.md](DESIGN.md)를 참고하세요.
+
 ## 라이선스
 
 [Apache License 2.0](LICENSE)
