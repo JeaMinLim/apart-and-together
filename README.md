@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/status-design--phase-orange.svg)](#현재-상태)
+[![Version](https://img.shields.io/badge/version-0.0.0-lightgrey.svg)](CHANGELOG.md)
 
 **따로또같이**는 서로 아는 사람들끼리 초대를 받아 각자 자신의 AI로 하위 과제를 맡아 작업하고, 호스트가 검증한 뒤 병합해 하나의 결과물(코드 또는 추론/분석)을 완성해가는 **초대제 AI 협업 플랫폼**입니다.
 
@@ -28,7 +29,7 @@
 
 GitHub를 그대로 백엔드로 사용한다(Issue = 과제, Pull Request = 제출, GitHub Actions = 자동 검증, `git blame` = 기여 귀속). 새로 만드는 것은 초대와 일감 배분을 자동화하는 프론트엔드와 AI 봇뿐이다.
 
-자세한 설계 결정과 근거는 [DESIGN.md](DESIGN.md)를 참고하세요.
+자세한 설계 결정과 근거는 [DESIGN.md](DESIGN.md)를 참고하세요. 구현 담당(Antigravity)에게 전달하는 작업 지시서는 [`specs/`](specs/) 디렉토리에 버전별로 쌓입니다. 버전 이력은 [CHANGELOG.md](CHANGELOG.md) 참고.
 
 ## 라이선스
 
