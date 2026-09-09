@@ -5,9 +5,7 @@ from __future__ import annotations
 import time
 from typing import Optional
 
-import requests
-
-from src.multi_ai.providers.base import BaseProvider, LLMResponse
+from src.multi_ai.providers.base import BaseProvider, LLMResponse, http_post_json
 
 
 class OpenAICompatProvider(BaseProvider):
@@ -28,9 +26,7 @@ class OpenAICompatProvider(BaseProvider):
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        headers = {
-            "Content-Type": "application/json",
-        }
+        headers = {}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
 
@@ -46,20 +42,24 @@ class OpenAICompatProvider(BaseProvider):
 
         start_time = time.perf_counter()
         try:
-            resp = requests.post(endpoint, json=payload, headers=headers, timeout=timeout)
+            status_code, data, raw_text = http_post_json(
+                endpoint,
+                json_payload=payload,
+                headers=headers,
+                timeout=timeout,
+            )
             latency = time.perf_counter() - start_time
 
-            if resp.status_code != 200:
+            if status_code != 200 or not data:
                 return LLMResponse(
                     provider=self.name,
                     model=target_model,
                     content="",
                     latency_seconds=latency,
                     success=False,
-                    error_message=f"HTTP {resp.status_code}: {resp.text[:300]}",
+                    error_message=f"HTTP {status_code}: {raw_text[:300]}",
                 )
 
-            data = resp.json()
             choice = data.get("choices", [{}])[0]
             content = choice.get("message", {}).get("content", "")
             usage = data.get("usage", {})

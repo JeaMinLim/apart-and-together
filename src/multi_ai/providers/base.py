@@ -2,9 +2,49 @@
 
 from __future__ import annotations
 
+import json
+import urllib.error
+import urllib.parse
+import urllib.request
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Dict, Optional, Tuple
+
+
+def http_post_json(
+    url: str,
+    json_payload: Dict[str, Any],
+    headers: Optional[Dict[str, str]] = None,
+    params: Optional[Dict[str, str]] = None,
+    timeout: float = 60.0,
+) -> Tuple[int, Optional[Dict[str, Any]], str]:
+    """Execute an HTTP POST request sending and receiving JSON via standard library urllib."""
+    if params:
+        url = f"{url}?{urllib.parse.urlencode(params)}"
+
+    req_headers = {"Content-Type": "application/json"}
+    if headers:
+        req_headers.update(headers)
+
+    data = json.dumps(json_payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers=req_headers, method="POST")
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            status_code = resp.getcode()
+            body_text = resp.read().decode("utf-8")
+            try:
+                parsed_json = json.loads(body_text)
+            except Exception:
+                parsed_json = None
+            return status_code, parsed_json, body_text
+    except urllib.error.HTTPError as err:
+        body_text = err.read().decode("utf-8", errors="replace")
+        try:
+            parsed_json = json.loads(body_text)
+        except Exception:
+            parsed_json = None
+        return err.code, parsed_json, body_text
 
 
 @dataclass

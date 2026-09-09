@@ -5,9 +5,7 @@ from __future__ import annotations
 import time
 from typing import Optional
 
-import requests
-
-from src.multi_ai.providers.base import BaseProvider, LLMResponse
+from src.multi_ai.providers.base import BaseProvider, LLMResponse, http_post_json
 
 
 class AnthropicProvider(BaseProvider):
@@ -24,7 +22,6 @@ class AnthropicProvider(BaseProvider):
         endpoint = f"{self.base_url}/messages"
 
         headers = {
-            "Content-Type": "application/json",
             "x-api-key": self.api_key or "",
             "anthropic-version": "2023-06-01",
         }
@@ -39,20 +36,24 @@ class AnthropicProvider(BaseProvider):
 
         start_time = time.perf_counter()
         try:
-            resp = requests.post(endpoint, json=payload, headers=headers, timeout=timeout)
+            status_code, data, raw_text = http_post_json(
+                endpoint,
+                json_payload=payload,
+                headers=headers,
+                timeout=timeout,
+            )
             latency = time.perf_counter() - start_time
 
-            if resp.status_code != 200:
+            if status_code != 200 or not data:
                 return LLMResponse(
                     provider=self.name,
                     model=target_model,
                     content="",
                     latency_seconds=latency,
                     success=False,
-                    error_message=f"HTTP {resp.status_code}: {resp.text[:300]}",
+                    error_message=f"HTTP {status_code}: {raw_text[:300]}",
                 )
 
-            data = resp.json()
             content_blocks = data.get("content", [])
             text_pieces = [b.get("text", "") for b in content_blocks if b.get("type") == "text"]
             content = "".join(text_pieces).strip()

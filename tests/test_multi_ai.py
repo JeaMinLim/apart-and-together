@@ -42,15 +42,16 @@ class TestMultiAIConfig(unittest.TestCase):
 
 
 class TestProviders(unittest.TestCase):
-    @patch("requests.post")
+    @patch("src.multi_ai.providers.openai_compat.http_post_json")
     def test_openai_compat_success(self, mock_post: MagicMock) -> None:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "choices": [{"message": {"content": "Hello from OpenAI!"}}],
-            "usage": {"total_tokens": 42},
-        }
-        mock_post.return_value = mock_resp
+        mock_post.return_value = (
+            200,
+            {
+                "choices": [{"message": {"content": "Hello from OpenAI!"}}],
+                "usage": {"total_tokens": 42},
+            },
+            "{}",
+        )
 
         provider = OpenAICompatProvider(
             name="openai",
@@ -65,15 +66,16 @@ class TestProviders(unittest.TestCase):
         self.assertEqual(res.tokens_used, 42)
         self.assertEqual(res.model, "gpt-4o")
 
-    @patch("requests.post")
+    @patch("src.multi_ai.providers.anthropic.http_post_json")
     def test_anthropic_success(self, mock_post: MagicMock) -> None:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "content": [{"type": "text", "text": "Hello from Claude!"}],
-            "usage": {"input_tokens": 10, "output_tokens": 20},
-        }
-        mock_post.return_value = mock_resp
+        mock_post.return_value = (
+            200,
+            {
+                "content": [{"type": "text", "text": "Hello from Claude!"}],
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+            },
+            "{}",
+        )
 
         provider = AnthropicProvider(
             name="anthropic",
@@ -87,17 +89,18 @@ class TestProviders(unittest.TestCase):
         self.assertEqual(res.content, "Hello from Claude!")
         self.assertEqual(res.tokens_used, 30)
 
-    @patch("requests.post")
+    @patch("src.multi_ai.providers.gemini.http_post_json")
     def test_gemini_success(self, mock_post: MagicMock) -> None:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "candidates": [
-                {"content": {"parts": [{"text": "Hello from Gemini!"}]}}
-            ],
-            "usageMetadata": {"totalTokenCount": 25},
-        }
-        mock_post.return_value = mock_resp
+        mock_post.return_value = (
+            200,
+            {
+                "candidates": [
+                    {"content": {"parts": [{"text": "Hello from Gemini!"}]}}
+                ],
+                "usageMetadata": {"totalTokenCount": 25},
+            },
+            "{}",
+        )
 
         provider = GeminiProvider(
             name="gemini",

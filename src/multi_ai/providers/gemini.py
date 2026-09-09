@@ -5,9 +5,7 @@ from __future__ import annotations
 import time
 from typing import Optional
 
-import requests
-
-from src.multi_ai.providers.base import BaseProvider, LLMResponse
+from src.multi_ai.providers.base import BaseProvider, LLMResponse, http_post_json
 
 
 class GeminiProvider(BaseProvider):
@@ -44,20 +42,24 @@ class GeminiProvider(BaseProvider):
 
         start_time = time.perf_counter()
         try:
-            resp = requests.post(endpoint, params=params, json=payload, timeout=timeout)
+            status_code, data, raw_text = http_post_json(
+                endpoint,
+                json_payload=payload,
+                params=params,
+                timeout=timeout,
+            )
             latency = time.perf_counter() - start_time
 
-            if resp.status_code != 200:
+            if status_code != 200 or not data:
                 return LLMResponse(
                     provider=self.name,
                     model=target_model,
                     content="",
                     latency_seconds=latency,
                     success=False,
-                    error_message=f"HTTP {resp.status_code}: {resp.text[:300]}",
+                    error_message=f"HTTP {status_code}: {raw_text[:300]}",
                 )
 
-            data = resp.json()
             candidates = data.get("candidates", [])
             content = ""
             if candidates:
