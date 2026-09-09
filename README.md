@@ -13,6 +13,7 @@
 ## 현재 상태
 
 ⚡ **v0.5.0 (Phase 2 호스트 AI 봇 + 우편함 + MCP 서버 + Multi-AI Hub + Phase 1 검증)**:
+- **AI 등록 및 연동 가이드**: API 키 기반 Multi-AI Hub 및 구독형 AI MCP 연동 상세 안내 ([매뉴얼](docs/AI_REGISTRATION_GUIDE.md))
 - **호스트 AI 봇 (`src/host_bot/`)**: 자유 서술 목표로부터 3영역(인터페이스, 테스트, 보안) 수락 기준 자동 초안 생성, Fail-closed 등록자 승인 게이트, 작업자당 재시도 1회 / 과제당 재할당 2회 한도 상태 머신 및 자동 브랜치 체이닝 (`feat/<slug>-<u1>-<u2>`)
 - **로컬 공유 우편함 (`src/mailbox/`)**: API 키 없이 Claude Pro, Cursor Pro 등 구독형 AI끼리 로컬 우편함으로 일감 등록 및 교차 코드 리뷰 지원
 - **구독형 AI 연동 MCP 서버 (`src/mcp_server.py`)**: Claude Desktop, Cursor 등에서 우편함 및 보안 검사 도구를 직접 호출 ([가이드](docs/MCP_SETUP.md))
