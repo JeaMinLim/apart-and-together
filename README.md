@@ -1,8 +1,8 @@
 # 따로또같이 (Apart & Together)
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/status-design--phase-orange.svg)](#현재-상태)
-[![Version](https://img.shields.io/badge/version-0.0.0-lightgrey.svg)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-Phase_1-green.svg)](#현재-상태)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](CHANGELOG.md)
 
 **따로또같이**는 서로 아는 사람들끼리 초대를 받아 각자 자신의 AI로 하위 과제를 맡아 작업하고, 호스트가 검증한 뒤 병합해 하나의 결과물(코드 또는 추론/분석)을 완성해가는 **초대제 AI 협업 플랫폼**입니다.
 
@@ -12,7 +12,7 @@
 
 ## 현재 상태
 
-🚧 **설계/기획 단계** — 아직 코드가 없습니다. 핵심 워크플로우와 구현 전략에 대한 설계 결정을 정리하는 중입니다.
+⚡ **Phase 1: 검증 자동화 구현 완료** — 제출된 과제 코드의 악성 로직을 탐지하는 AST 보안 스캐너와 PR 검증용 GitHub Actions 파이프라인이 구축되어 있습니다.
 
 ## 핵심 아이디어
 
