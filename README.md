@@ -1,8 +1,8 @@
 # 따로또같이 (Apart & Together)
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/status-Phase_1-green.svg)](#현재-상태)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-Phase_1_+_Multi--AI_Hub-green.svg)](#현재-상태)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](CHANGELOG.md)
 
 **따로또같이**는 서로 아는 사람들끼리 초대를 받아 각자 자신의 AI로 하위 과제를 맡아 작업하고, 호스트가 검증한 뒤 병합해 하나의 결과물(코드 또는 추론/분석)을 완성해가는 **초대제 AI 협업 플랫폼**입니다.
 
@@ -12,7 +12,9 @@
 
 ## 현재 상태
 
-⚡ **Phase 1: 검증 자동화 구현 완료** — 제출된 과제 코드의 악성 로직을 탐지하는 AST 보안 스캐너와 PR 검증용 GitHub Actions 파이프라인이 구축되어 있습니다.
+⚡ **v0.2.0 (Phase 1 자동 검증 + Multi-AI Hub 선행 도구 탑재)**:
+- **Phase 1 검증 자동화**: AST 보안 감사기(`src/verify/ast_scanner.py`) 및 PR 자동 검증 워크플로우 구축
+- **Multi-AI Hub CLI (`./bin/multi-ai`)**: ChatGPT, Claude, Gemini, Grok, OpenRouter, 로컬 LLM(Ollama)을 묶어 병렬 질의, 종합(Synthesis), 코드 생성 및 AST 교차 검증 지원
 
 ## 핵심 아이디어
 
