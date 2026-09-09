@@ -71,3 +71,24 @@ AI가 작성한 코드나 내가 작성한 파이썬 코드에 `eval`, `subproce
 현재 Multi-AI 허브에 활성화된 프로바이더 목록을 확인합니다.
 > **프롬프트 예시:**
 > *"현재 연동된 AI 모델 상태를 get_multi_ai_status로 확인해줘."*
+
+---
+
+## 4. 💡 API 키 0원으로 구독 AI끼리 협업하기 (공유 우편함)
+
+Grok이나 ChatGPT의 유료 API 키를 구매하지 않고도, **Claude Pro와 Cursor Pro 등 구독 프로그램끼리 로컬 우편함을 통해 코드를 리뷰하고 협업**할 수 있습니다.
+
+### 단계 1: Claude Desktop에서 리뷰 요청 등록
+> **Claude 채팅창:**
+> *"내가 작성한 이 CSV 파서 코드를 `post_task_to_mailbox` 도구로 코드 리뷰 일감으로 등록해줘."*
+
+### 단계 2: Cursor (또는 다른 창)에서 일감 가져와 리뷰 작성
+> **Cursor 채팅창:**
+> *"우편함에 올라온 일감이 있는지 `get_pending_tasks`로 확인하고, 있으면 가져와서 코드 리뷰 후 `submit_task_result`로 제출해줘."*
+> 
+> *(이때 작성된 리뷰 코드에 대해 Phase 1 AST 보안 검사가 자동으로 실행됩니다.)*
+
+### 단계 3: Claude Desktop에서 다른 AI의 리뷰를 수거하여 코드 개선
+> **Claude 채팅창:**
+> *"우편함에서 내 일감에 대한 다른 AI의 리뷰를 `get_completed_task_results`로 가져와서 코드를 개선해줘."*
+

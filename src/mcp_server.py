@@ -2,7 +2,8 @@
 """Model Context Protocol (MCP) server for Apart & Together.
 
 Allows subscription-based AIs (Claude Desktop, Cursor, etc.) to communicate
-with the Multi-AI Hub and Phase 1 AST security auditor via standard stdio JSON-RPC.
+with the Multi-AI Hub, shared local mailbox, and Phase 1 AST security auditor
+via standard stdio JSON-RPC.
 """
 
 from __future__ import annotations
@@ -17,15 +18,17 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.mailbox.store import MailboxStore
 from src.multi_ai.config import load_ai_config
 from src.multi_ai.hub import MultiAIHub
 from src.verify.ast_scanner import scan_source
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "apart-and-together-mcp"
-SERVER_VERSION = "0.3.0"
+SERVER_VERSION = "0.4.0"
 
 _TOOLS = [
+    # --- Multi-AI Hub Tools ---
     {
         "name": "get_multi_ai_status",
         "description": "Check the status of configured AI providers in Apart & Together (ChatGPT, Claude, Gemini, Grok, OpenRouter, Ollama).",
@@ -88,6 +91,97 @@ _TOOLS = [
             "required": ["code"],
         },
     },
+
+    # --- Shared Mailbox (Zero-API Collaboration for Subscriptions) ---
+    {
+        "name": "post_task_to_mailbox",
+        "description": "Post a new task (e.g. code review, question, bug fix) to the local shared mailbox so other subscription AIs can review or work on it.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "A short summary of the task.",
+                },
+                "content": {
+                    "type": "string",
+                    "description": "The full code snippet, question, or requirements to be reviewed/solved.",
+                },
+                "task_type": {
+                    "type": "string",
+                    "description": "Type of task: 'code_review', 'code_generation', or 'question' (default: 'code_review').",
+                },
+                "author": {
+                    "type": "string",
+                    "description": "Name of the posting AI or user (e.g. 'claude-desktop', 'cursor').",
+                },
+            },
+            "required": ["title", "content"],
+        },
+    },
+    {
+        "name": "get_pending_tasks",
+        "description": "List all pending tasks waiting in the local mailbox for review or implementation.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_type": {
+                    "type": "string",
+                    "description": "Optional filter by task type (e.g. 'code_review').",
+                },
+            },
+        },
+    },
+    {
+        "name": "get_task_details",
+        "description": "Get the full details of a specific task from the mailbox, including its code and all responses submitted so far.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "The ID of the task (e.g. 'task-20260909-01').",
+                },
+            },
+            "required": ["task_id"],
+        },
+    },
+    {
+        "name": "submit_task_result",
+        "description": "Submit review feedback or a solution to a task in the mailbox. If Python code is included, it is automatically audited with the AST security scanner.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "The ID of the task to respond to.",
+                },
+                "result_content": {
+                    "type": "string",
+                    "description": "Your review feedback, suggestions, or solution code.",
+                },
+                "contributor": {
+                    "type": "string",
+                    "description": "Your identity (e.g. 'cursor-pro', 'claude-desktop', 'chatgpt').",
+                },
+            },
+            "required": ["task_id", "result_content"],
+        },
+    },
+    {
+        "name": "get_completed_task_results",
+        "description": "Retrieve all results and reviews submitted by other AIs for a task so you can synthesize and apply their feedback.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "task_id": {
+                    "type": "string",
+                    "description": "The ID of the task to check.",
+                },
+            },
+            "required": ["task_id"],
+        },
+    },
 ]
 
 
@@ -97,9 +191,11 @@ def log_debug(msg: str) -> None:
 
 
 class MCPServer:
-    def __init__(self) -> None:
+    def __init__(self, mailbox_path: Optional[Path] = None) -> None:
         self.hub = MultiAIHub()
+        self.mailbox = MailboxStore(mailbox_path)
 
+    # --- Hub Tool Handlers ---
     def handle_tool_get_status(self) -> str:
         configs = load_ai_config()
         lines = ["=== Apart & Together — Multi-AI Hub Status ==="]
@@ -170,6 +266,116 @@ class MCPServer:
         lines.append("Action required: Remove or refactor the dangerous calls to meet safety verification criteria.")
         return "\n".join(lines)
 
+    # --- Mailbox Tool Handlers ---
+    def handle_post_task_to_mailbox(self, args: Dict[str, Any]) -> str:
+        title = args.get("title", "")
+        content = args.get("content", "")
+        task_type = args.get("task_type", "code_review")
+        author = args.get("author", "mcp_client")
+
+        task = self.mailbox.create_task(
+            title=title,
+            content=content,
+            task_type=task_type,
+            author=author,
+        )
+        return (
+            f"📬 Task successfully posted to shared mailbox!\n"
+            f"- Task ID: {task.task_id}\n"
+            f"- Title: {task.title}\n"
+            f"- Type: {task.task_type}\n"
+            f"- Author: {task.author}\n"
+            f"- Status: {task.status}\n\n"
+            f"Other AIs (Cursor, Claude, etc.) can now find and review this task using get_pending_tasks."
+        )
+
+    def handle_get_pending_tasks(self, args: Dict[str, Any]) -> str:
+        task_type = args.get("task_type")
+        tasks = self.mailbox.list_tasks(status="pending", task_type=task_type)
+        in_progress = self.mailbox.list_tasks(status="in_progress", task_type=task_type)
+        all_active = tasks + in_progress
+
+        if not all_active:
+            return "📬 The shared mailbox has no pending tasks right now."
+
+        lines = [f"=== Shared Mailbox: {len(all_active)} Active Task(s) ==="]
+        for t in all_active:
+            res_count = len(t.results)
+            lines.append(f"• [{t.task_id}] ({t.task_type}) {t.title}")
+            lines.append(f"  Author: {t.author} | Status: {t.status} | Reviews so far: {res_count}")
+        lines.append("\nUse 'get_task_details(task_id)' to view the full code or requirements.")
+        return "\n".join(lines)
+
+    def handle_get_task_details(self, args: Dict[str, Any]) -> str:
+        task_id = args.get("task_id", "")
+        task = self.mailbox.get_task(task_id)
+        if not task:
+            return f"❌ Task '{task_id}' was not found in the mailbox."
+
+        lines = [
+            f"=== Task Details: {task.task_id} ===",
+            f"Title:       {task.title}",
+            f"Type:        {task.task_type}",
+            f"Author:      {task.author}",
+            f"Created At:  {task.created_at}",
+            f"Status:      {task.status}",
+            "",
+            "--- Content / Code ---",
+            task.content,
+            "",
+        ]
+
+        if task.results:
+            lines.append(f"--- Submissions & Reviews ({len(task.results)}) ---")
+            for r in task.results:
+                audit_info = f" [{r.ast_audit_details}]" if r.ast_audit_details else ""
+                lines.append(f"• [{r.result_id}] By {r.submitted_by} at {r.submitted_at}{audit_info}:")
+                lines.append(f"{r.content}\n")
+        else:
+            lines.append("No reviews or submissions have been recorded yet.")
+        return "\n".join(lines)
+
+    def handle_submit_task_result(self, args: Dict[str, Any]) -> str:
+        task_id = args.get("task_id", "")
+        result_content = args.get("result_content", "")
+        contributor = args.get("contributor", "mcp_client")
+
+        try:
+            res = self.mailbox.submit_result(
+                task_id=task_id,
+                content=result_content,
+                contributor=contributor,
+                auto_audit=True,
+            )
+            audit_note = f"\n- Security Audit: {res.ast_audit_details}" if res.ast_audit_details else ""
+            return (
+                f"✅ Review/result submitted successfully!\n"
+                f"- Result ID: {res.result_id}\n"
+                f"- Contributor: {res.submitted_by}\n"
+                f"- Submitted At: {res.submitted_at}"
+                f"{audit_note}"
+            )
+        except KeyError as err:
+            return f"❌ Error: {err}"
+
+    def handle_get_completed_task_results(self, args: Dict[str, Any]) -> str:
+        task_id = args.get("task_id", "")
+        task = self.mailbox.get_task(task_id)
+        if not task:
+            return f"❌ Task '{task_id}' was not found."
+
+        if not task.results:
+            return f"Task '{task_id}' has not received any reviews or results yet."
+
+        lines = [f"=== All Submissions for Task {task_id} ({len(task.results)}) ==="]
+        for r in task.results:
+            lines.append(f"--- From: {r.submitted_by} ({r.submitted_at}) ---")
+            if r.ast_audit_details:
+                lines.append(f"Security: {r.ast_audit_details}")
+            lines.append(r.content)
+            lines.append("")
+        return "\n".join(lines)
+
     def execute_tool(self, name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         try:
             if name == "get_multi_ai_status":
@@ -180,6 +386,16 @@ class MCPServer:
                 text = self.handle_tool_synth(args)
             elif name == "audit_code_security":
                 text = self.handle_tool_audit(args)
+            elif name == "post_task_to_mailbox":
+                text = self.handle_post_task_to_mailbox(args)
+            elif name == "get_pending_tasks":
+                text = self.handle_get_pending_tasks(args)
+            elif name == "get_task_details":
+                text = self.handle_get_task_details(args)
+            elif name == "submit_task_result":
+                text = self.handle_submit_task_result(args)
+            elif name == "get_completed_task_results":
+                text = self.handle_get_completed_task_results(args)
             else:
                 return {
                     "content": [{"type": "text", "text": f"Unknown tool: '{name}'"}],
@@ -200,7 +416,7 @@ class MCPServer:
         method = message.get("method")
         params = message.get("params", {})
 
-        # Handle notifications (no response needed)
+        # Handle notifications
         if method == "notifications/initialized":
             log_debug("Client initialized.")
             return None

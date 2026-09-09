@@ -131,6 +131,70 @@ def cmd_code(hub: MultiAIHub, task: str, models: Optional[List[str]]) -> int:
     return 0
 
 
+def cmd_mailbox(args: argparse.Namespace) -> int:
+    from src.mailbox.store import MailboxStore
+
+    store = MailboxStore()
+    action = args.mailbox_action
+
+    if action == "list" or not action:
+        tasks = store.list_tasks()
+        print_banner("Apart & Together — Shared Mailbox Tasks")
+        if not tasks:
+            print("우편함이 비어 있습니다. (등록된 일감 없음)")
+            return 0
+
+        print(f"{'Task ID':<20} | {'Type':<14} | {'Status':<12} | {'Author':<14} | {'Title'}")
+        print("-" * 84)
+        for t in tasks:
+            print(f"{t.task_id:<20} | {t.task_type:<14} | {t.status:<12} | {t.author:<14} | {t.title}")
+        print("-" * 84)
+        print(f"Total tasks: {len(tasks)}\n")
+        return 0
+
+    if action == "view":
+        task = store.get_task(args.task_id)
+        if not task:
+            print(f"❌ 일감 '{args.task_id}'을(를) 찾을 수 없습니다.")
+            return 1
+
+        print_banner(f"Task Details: {task.task_id}")
+        print(f"제목:     {task.title}")
+        print(f"유형:     {task.task_type}")
+        print(f"작성자:   {task.author}")
+        print(f"생성일:   {task.created_at}")
+        print(f"상태:     {task.status}\n")
+        print("--- 내용 / 코드 ---")
+        print(task.content)
+        print("\n--- 제출된 피드백 / 결과 (" + str(len(task.results)) + "건) ---")
+        if not task.results:
+            print("아직 제출된 리뷰나 결과가 없습니다.")
+        for r in task.results:
+            audit = f" [보안감사: {r.ast_audit_details}]" if r.ast_audit_details else ""
+            print(f"• [{r.result_id}] By {r.submitted_by} ({r.submitted_at}){audit}:")
+            print(r.content)
+            print("-" * 40)
+        return 0
+
+    if action == "post":
+        task = store.create_task(
+            title=args.title,
+            content=args.content,
+            task_type=args.type or "code_review",
+            author=args.author or "cli_user",
+        )
+        print(f"📬 우편함에 새 일감이 등록되었습니다!")
+        print(f"  ID: {task.task_id} ({task.title})")
+        return 0
+
+    if action == "clear":
+        store.clear()
+        print("🧹 공유 우편함의 모든 일감을 삭제했습니다.")
+        return 0
+
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Apart & Together — Multi-AI Hub CLI: Bundle and query multiple AIs.",
@@ -157,6 +221,19 @@ def main() -> int:
     code_parser.add_argument("task", type=str, help="Coding task specification")
     code_parser.add_argument("--models", type=str, help="Comma-separated model names")
 
+    # Command: mailbox
+    mb_parser = subparsers.add_parser("mailbox", help="Manage shared local mailbox for subscription AIs")
+    mb_sub = mb_parser.add_subparsers(dest="mailbox_action", help="Mailbox actions")
+    mb_sub.add_parser("list", help="List all mailbox tasks")
+    view_p = mb_sub.add_parser("view", help="View task details and reviews")
+    view_p.add_argument("task_id", type=str, help="Task ID to inspect")
+    post_p = mb_sub.add_parser("post", help="Post a new task to the mailbox")
+    post_p.add_argument("title", type=str, help="Task title")
+    post_p.add_argument("content", type=str, help="Task content or code")
+    post_p.add_argument("--type", type=str, default="code_review", help="Task type (default: code_review)")
+    post_p.add_argument("--author", type=str, default="cli_user", help="Author name")
+    mb_sub.add_parser("clear", help="Clear all tasks from the mailbox")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -178,6 +255,9 @@ def main() -> int:
     if args.command == "code":
         models = [m.strip().lower() for m in args.models.split(",")] if args.models else None
         return cmd_code(hub, args.task, models)
+
+    if args.command == "mailbox":
+        return cmd_mailbox(args)
 
     return 0
 

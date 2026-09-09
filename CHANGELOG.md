@@ -2,6 +2,19 @@
 
 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 따릅니다. 아직 코드가 없는 설계 단계이므로, 버전은 "구현 명세서/설계 문서" 단위로 매깁니다.
 
+## [v0.4.0] - 2026-09-09
+
+### 추가됨
+- `specs/v0.4.0_shared_mailbox_spec.md` — API 키 없는 구독형 AI 간 협업을 위한 로컬 공유 우편함 명세서
+- `src/mailbox/store.py` — 원자적 파일 기반 로컬 공유 우편함 저장소
+- `src/mcp_server.py` 우편함 도구 5종 추가 (`post_task_to_mailbox`, `get_pending_tasks`, `get_task_details`, `submit_task_result`, `get_completed_task_results`)
+- `src/multi_ai/cli.py` & `bin/multi-ai` `mailbox` 하위 명령어 추가 (`list`, `view`, `post`, `clear`)
+- `tests/test_mailbox.py` — 우편함 등록, 조회, 결과 제출 및 AST 보안 감사 연동 테스트
+- `docs/MCP_SETUP.md` — 공유 우편함 워크플로우 및 채팅 프롬프트 가이드 추가
+
+### 상태
+API 키 없는 구독형 AI(Claude Desktop, Cursor 등) 간 로컬 공유 우편함 협업 구현 완료.
+
 ## [v0.3.0] - 2026-09-09
 
 ### 추가됨
