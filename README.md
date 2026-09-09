@@ -1,8 +1,8 @@
 # 따로또같이 (Apart & Together)
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/status-Phase_1_+_Shared_Mailbox-green.svg)](#현재-상태)
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-Phase_2_Host_AI_Bot-green.svg)](#현재-상태)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](CHANGELOG.md)
 
 **따로또같이**는 서로 아는 사람들끼리 초대를 받아 각자 자신의 AI로 하위 과제를 맡아 작업하고, 호스트가 검증한 뒤 병합해 하나의 결과물(코드 또는 추론/분석)을 완성해가는 **초대제 AI 협업 플랫폼**입니다.
 
@@ -12,10 +12,11 @@
 
 ## 현재 상태
 
-⚡ **v0.4.0 (API 키 0원 구독 AI 협업 우편함 + MCP 서버 + Multi-AI Hub + Phase 1 검증)**:
+⚡ **v0.5.0 (Phase 2 호스트 AI 봇 + 우편함 + MCP 서버 + Multi-AI Hub + Phase 1 검증)**:
+- **호스트 AI 봇 (`src/host_bot/`)**: 자유 서술 목표로부터 3영역(인터페이스, 테스트, 보안) 수락 기준 자동 초안 생성, Fail-closed 등록자 승인 게이트, 작업자당 재시도 1회 / 과제당 재할당 2회 한도 상태 머신 및 자동 브랜치 체이닝 (`feat/<slug>-<u1>-<u2>`)
 - **로컬 공유 우편함 (`src/mailbox/`)**: API 키 없이 Claude Pro, Cursor Pro 등 구독형 AI끼리 로컬 우편함으로 일감 등록 및 교차 코드 리뷰 지원
 - **구독형 AI 연동 MCP 서버 (`src/mcp_server.py`)**: Claude Desktop, Cursor 등에서 우편함 및 보안 검사 도구를 직접 호출 ([가이드](docs/MCP_SETUP.md))
-- **Multi-AI Hub CLI (`./bin/multi-ai`)**: ChatGPT, Claude, Gemini, Grok, OpenRouter, 로컬 LLM(Ollama)을 묶어 병렬 질의, 종합 및 우편함 관리
+- **Multi-AI Hub CLI (`./bin/multi-ai`)**: ChatGPT, Claude, Gemini, Grok, OpenRouter, 로컬 LLM(Ollama)을 묶어 병렬 질의, 종합, 우편함 및 호스트 봇 수명주기 관리
 - **Phase 1 자동 검증**: AST 보안 감사기(`src/verify/ast_scanner.py`) 및 PR 자동 검증 워크플로우 구축
 
 ## 핵심 아이디어

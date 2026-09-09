@@ -20,10 +20,13 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
+# Virtual environments & Local state
 .env
 .venv
 .mailbox/
+.state/
+*.db
+*.sqlite3
 env/
 venv/
 ENV/

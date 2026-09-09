@@ -2,6 +2,20 @@
 
 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 따릅니다. 아직 코드가 없는 설계 단계이므로, 버전은 "구현 명세서/설계 문서" 단위로 매깁니다.
 
+## [v0.5.0] - 2026-09-09
+
+### 추가됨
+- `specs/v0.5.0_phase2_host_bot_spec.md` — Phase 2 호스트 AI 봇 구현 명세서 (수락 기준 자동 생성 + 상태 머신)
+- `src/host_bot/` — Phase 2 호스트 AI 봇 패키지 (표준 라이브러리 의존성 제로)
+  - `draft_generator.py`: 자유 서술 목표를 3영역(인터페이스 스펙, 테스트 케이스, 제약 사항) 수락 기준으로 구조화 생성 (AI 쿼리 및 휴리스틱 폴백)
+  - `lifecycle.py`: SQLite 기반 과제 수명주기 상태 머신 (작업자당 재시도 1회 `MAX_RETRIES_PER_WORKER=1`, 과제당 재할당 2회 `MAX_REASSIGNMENTS=2` 한도, 브랜치 체이닝 `feat/<slug>-<u1>-<u2>` 지원)
+  - `dispatcher.py`: 과제 생성, Fail-closed 승인 게이트, 작업자 배정, PR 제출, 검증 통과/실패 이벤트 라우팅 디스패처
+- `src/multi_ai/cli.py` & `bin/multi-ai` `bot` 하위 명령어 추가 (`draft`, `list`, `create`, `approve`, `assign`, `pass`, `fail`)
+- `tests/test_host_bot.py` — 초안 생성, 승인 게이트, 재시도/재할당 한도 및 영구 실패(Denial-of-Wallet 방지) 단위 테스트
+
+### 상태
+Phase 2(호스트 AI 봇: 수락 기준 자동 초안 생성 및 재시도/재할당 상태 머신) 구현 완료.
+
 ## [v0.4.0] - 2026-09-09
 
 ### 추가됨

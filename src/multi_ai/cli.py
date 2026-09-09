@@ -195,6 +195,102 @@ def cmd_mailbox(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bot(args: argparse.Namespace, hub: MultiAIHub) -> int:
+    from src.host_bot.dispatcher import HostBotDispatcher
+    from src.host_bot.draft_generator import generate_acceptance_criteria
+    from src.host_bot.lifecycle import TaskLifecycleStore
+
+    store = TaskLifecycleStore()
+    dispatcher = HostBotDispatcher(store=store, hub=hub)
+    action = args.bot_action
+
+    if action == "draft":
+        print_banner("Apart & Together — Host AI Draft Generator")
+        context = f"{args.goal}\n{args.description}" if getattr(args, "description", None) else args.goal
+        criteria = generate_acceptance_criteria(raw_description=context, hub=hub)
+        print(criteria.to_markdown())
+        return 0
+
+    if action == "create":
+        task, criteria = dispatcher.handle_task_created(
+            task_id=args.task_id,
+            title=args.title,
+            raw_description=args.goal,
+            creator=args.creator or "host",
+        )
+        print_banner(f"Task Created & Criteria Drafted: {task.task_id}")
+        print(f"상태: {task.status.value} (등록자 승인 대기 중 - Fail-closed)")
+        print("\n" + criteria.to_markdown())
+        print("\n승인 명령어: ./bin/multi-ai bot approve " + task.task_id)
+        return 0
+
+    if action == "approve":
+        approver = args.approver or "host"
+        try:
+            task = dispatcher.handle_task_approved(args.task_id, approver=approver)
+            print(f"✅ 과제 '{task.task_id}' 승인 완료! 상태: {task.status.value} (참여자 배정 가능)")
+            return 0
+        except Exception as exc:
+            print(f"❌ 승인 실패: {exc}")
+            return 1
+
+    if action == "assign":
+        try:
+            task = dispatcher.handle_worker_assigned(args.task_id, worker=args.worker)
+            print(f"👤 작업자 배정 완료: @{task.current_worker}")
+            print(f"  - 작업 브랜치: `{task.current_branch}`")
+            print(f"  - 베이스 브랜치: `{task.base_branch}`")
+            print(f"  - 상태: {task.status.value}")
+            return 0
+        except Exception as exc:
+            print(f"❌ 배정 실패: {exc}")
+            return 1
+
+    if action == "pass":
+        try:
+            task, action_type, msg = dispatcher.handle_verification_result(args.task_id, passed=True)
+            print(f"🎉 {msg}")
+            print(f"  - 과제 '{task.task_id}' 상태: {task.status.value}")
+            return 0
+        except Exception as exc:
+            print(f"❌ 오류: {exc}")
+            return 1
+
+    if action == "fail":
+        reason = args.reason or "단위 테스트 불일치"
+        try:
+            task, action_type, msg = dispatcher.handle_verification_result(
+                args.task_id,
+                passed=False,
+                failure_reason=reason,
+            )
+            print_banner(f"Verification Failed — Action: {action_type}")
+            print(msg)
+            print(f"\n과제 현재 상태: {task.status.value} (재시도: {task.worker_retry_count}/1, 재할당: {task.reassign_count}/2)")
+            return 0
+        except Exception as exc:
+            print(f"❌ 오류: {exc}")
+            return 1
+
+    if action == "list" or not action:
+        tasks = store.list_tasks()
+        print_banner("Apart & Together — Host Bot Tracked Tasks")
+        if not tasks:
+            print("현재 추적 중인 과제가 없습니다.")
+            return 0
+
+        print(f"{'Task ID':<18} | {'Status':<18} | {'Worker':<12} | {'Retries':<8} | {'Reassign':<8} | {'Title'}")
+        print("-" * 88)
+        for t in tasks:
+            worker = t.current_worker or "-"
+            print(f"{t.task_id:<18} | {t.status.value:<18} | {worker:<12} | {t.worker_retry_count:<8} | {t.reassign_count:<8} | {t.title}")
+        print("-" * 88)
+        print(f"Total tracked tasks: {len(tasks)}\n")
+        return 0
+
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Apart & Together — Multi-AI Hub CLI: Bundle and query multiple AIs.",
@@ -234,6 +330,30 @@ def main() -> int:
     post_p.add_argument("--author", type=str, default="cli_user", help="Author name")
     mb_sub.add_parser("clear", help="Clear all tasks from the mailbox")
 
+    # Command: bot (Phase 2 Host AI Bot)
+    bot_parser = subparsers.add_parser("bot", help="Phase 2 Host AI Bot: Draft generator & lifecycle state machine")
+    bot_sub = bot_parser.add_subparsers(dest="bot_action", help="Host bot actions")
+    draft_p = bot_sub.add_parser("draft", help="Generate 3-part acceptance criteria draft from free-form goal")
+    draft_p.add_argument("goal", type=str, help="Free-form coding goal")
+    draft_p.add_argument("--description", type=str, default="", help="Optional detailed requirements or context")
+    bot_sub.add_parser("list", help="List all tracked tasks with lifecycle status")
+    create_p = bot_sub.add_parser("create", help="Create new task and generate draft criteria")
+    create_p.add_argument("task_id", type=str, help="Task ID (e.g. task-01)")
+    create_p.add_argument("title", type=str, help="Task title")
+    create_p.add_argument("goal", type=str, help="Free-form goal")
+    create_p.add_argument("--creator", type=str, default="host", help="Task creator")
+    approve_p = bot_sub.add_parser("approve", help="Approve draft criteria (fail-closed gate)")
+    approve_p.add_argument("task_id", type=str, help="Task ID to approve")
+    approve_p.add_argument("--approver", type=str, default="host", help="Approver identity")
+    assign_p = bot_sub.add_parser("assign", help="Assign worker and compute branch name")
+    assign_p.add_argument("task_id", type=str, help="Task ID")
+    assign_p.add_argument("worker", type=str, help="Worker username")
+    pass_p = bot_sub.add_parser("pass", help="Record verification pass")
+    pass_p.add_argument("task_id", type=str, help="Task ID")
+    fail_p = bot_sub.add_parser("fail", help="Record verification fail (triggers retry/reassignment)")
+    fail_p.add_argument("task_id", type=str, help="Task ID")
+    fail_p.add_argument("--reason", type=str, default="Test failed", help="Failure reason")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -258,6 +378,9 @@ def main() -> int:
 
     if args.command == "mailbox":
         return cmd_mailbox(args)
+
+    if args.command == "bot":
+        return cmd_bot(args, hub)
 
     return 0
 
