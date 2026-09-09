@@ -2,6 +2,21 @@
 
 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 따릅니다. 아직 코드가 없는 설계 단계이므로, 버전은 "구현 명세서/설계 문서" 단위로 매깁니다.
 
+## [v0.3.0] - 2026-09-09
+
+### 추가됨
+- `specs/v0.3.0_mcp_server_spec.md` — 구독형 AI(Claude Desktop, Cursor) 연동용 MCP 서버 명세서
+- `src/mcp_server.py` — 표준 stdio JSON-RPC 2.0 기반 로컬 MCP 서버 (의존성 제로)
+  - `audit_code_security`: Phase 1 AST 보안 감사기 연동
+  - `ask_other_ais`: 다른 AI 모델 병렬 교차 질의 연동
+  - `synthesize_with_other_ais`: 다중 AI 종합 도구 연동
+  - `get_multi_ai_status`: 허브 상태 조회 연동
+- `docs/MCP_SETUP.md` — Claude Desktop 및 Cursor 연동 가이드
+- `tests/test_mcp_server.py` — MCP JSON-RPC 프로토콜 및 도구 실행 단위 테스트
+
+### 상태
+구독형 AI 연동을 위한 로컬 MCP 서버 구축 완료.
+
 ## [v0.2.0] - 2026-09-09
 
 ### 추가됨
